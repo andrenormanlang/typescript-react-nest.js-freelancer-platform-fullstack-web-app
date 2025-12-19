@@ -231,12 +231,11 @@ export class UsersController {
     return plainToClass(UserResponseDto, user);
   }
 
-  
   @Put(':id')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'avatar', maxCount: 1 },
-      { name: 'skillImageUrls', maxCount: 10 }, 
+      { name: 'skillImageUrls', maxCount: 10 },
     ])
   )
   @ApiOperation({ summary: 'Update a user by ID' })
@@ -265,16 +264,21 @@ export class UsersController {
     console.log('Received skillImageUrls:', files.skillImageUrls);
     console.log('Received avatar:', files.avatar);
 
-    if (files.skillImageUrls && files.skillImageUrls.length > 0) {
-      console.log('Received skillImageUrls:', files.skillImageUrls);
-      // Use uploadFile instead of uploadImage to preserve file extensions
-      const uploadResults = await Promise.all(
-        files.skillImageUrls.map((file) => this.cloudinaryService.uploadFile(file))
+    // Process avatar upload (profile image)
+    if (files.avatar && files.avatar.length > 0) {
+      const uploadResult = await this.cloudinaryService.uploadImage(
+        files.avatar[0]
       );
-      userDto.skillImageUrls = uploadResults.map((result) => result.secure_url);
+      userDto.avatarUrl = uploadResult.secure_url;
+      console.log('Uploaded avatar:', userDto.avatarUrl);
     }
 
-    const updatedUser = await this.usersService.update(id, userDto, files.skillImageUrls);
+    // Skill images are handled in UsersService.update (uploads + append)
+    const updatedUser = await this.usersService.update(
+      id,
+      userDto,
+      files.skillImageUrls
+    );
     return plainToClass(UserResponseDto, updatedUser);
   }
 
