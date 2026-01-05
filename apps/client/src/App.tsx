@@ -7,12 +7,14 @@ import { UserProvider } from "./contexts/UserContext";
 import { GradientProvider } from "./contexts/GradientContext";
 import "./App.css";
 import { Toaster } from "./components/shadcn/ui/toaster";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import EmailVerificationPage from "./pages/EmailVerificationPage";
 import { SocketProvider } from "./contexts/SocketContext";
 import { Provider as JotaiProvider } from "jotai";
 
 const HomePage = React.lazy(() => import("./pages/HomePage")); // Lazy load the HomePage
+const EmailVerificationPage = React.lazy(
+  () => import("./pages/EmailVerificationPage")
+);
+const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 
 function App() {
   return (

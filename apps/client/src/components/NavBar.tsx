@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, Suspense } from "react";
 import { logout } from "../services/MindsMeshAPI";
 import { Button } from "./shadcn/ui/button";
 import {
@@ -16,13 +16,15 @@ import {
   Pencil1Icon,
 } from "@radix-ui/react-icons";
 import { FaPalette } from "react-icons/fa";
-import LoginForm from "./LoginForm";
-import RegisterForm from "./RegisterForm";
-import EditProfileForm from "./EditProfileForm";
 import logo from "../assets/logo.svg";
 import { UserContext } from "../contexts/UserContext";
 import { useGradient } from "../hooks/useGradient";
 import { useToast } from "./shadcn/ui/use-toast";
+import LoadingSpinner from "../helpers/LoadingSpinner";
+
+const LoginForm = React.lazy(() => import("./LoginForm"));
+const RegisterForm = React.lazy(() => import("./RegisterForm"));
+const EditProfileForm = React.lazy(() => import("./EditProfileForm"));
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -75,7 +77,9 @@ const Navbar: React.FC = () => {
   }, [menuOpen]);
 
   return (
-    <nav className={`navbar p-2 h-16 top-0 z-50 transition-colors duration-500`}>
+    <nav
+      className={`navbar p-2 h-16 top-0 z-50 transition-colors duration-500`}
+    >
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo and Brand Name */}
         <Link
@@ -141,7 +145,9 @@ const Navbar: React.FC = () => {
                     <DialogHeader>
                       <DialogTitle>Login</DialogTitle>
                     </DialogHeader>
-                    <LoginForm />
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <LoginForm />
+                    </Suspense>
                   </DialogContent>
                 </Dialog>
 
@@ -162,9 +168,11 @@ const Navbar: React.FC = () => {
                     <DialogHeader>
                       <DialogTitle>Register</DialogTitle>
                     </DialogHeader>
-                    <RegisterForm
-                      onClose={() => setIsRegisterDialogOpen(false)}
-                    />
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <RegisterForm
+                        onClose={() => setIsRegisterDialogOpen(false)}
+                      />
+                    </Suspense>
                   </DialogContent>
                 </Dialog>
               </>
@@ -255,7 +263,9 @@ const Navbar: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle>Login</DialogTitle>
                 </DialogHeader>
-                <LoginForm />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <LoginForm />
+                </Suspense>
               </DialogContent>
             </Dialog>
 
@@ -280,7 +290,11 @@ const Navbar: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle>Register</DialogTitle>
                 </DialogHeader>
-                <RegisterForm onClose={() => setIsRegisterDialogOpen(false)} />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <RegisterForm
+                    onClose={() => setIsRegisterDialogOpen(false)}
+                  />
+                </Suspense>
               </DialogContent>
             </Dialog>
           </>
@@ -293,16 +307,18 @@ const Navbar: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
-          {user && (
-            <EditProfileForm
-              user={user}
-              setUser={(updatedUser) => {
-                setUser(updatedUser);
-                setIsProfileOpen(false);
-                refreshUser();
-              }}
-            />
-          )}
+          <Suspense fallback={<LoadingSpinner />}>
+            {user && (
+              <EditProfileForm
+                user={user}
+                setUser={(updatedUser) => {
+                  setUser(updatedUser);
+                  setIsProfileOpen(false);
+                  refreshUser();
+                }}
+              />
+            )}
+          </Suspense>
         </DialogContent>
       </Dialog>
     </nav>

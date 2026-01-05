@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useContext } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useContext,
+  Suspense,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { GradientContext } from "../contexts/GradientContext";
 import { UserContext } from "../contexts/UserContext";
@@ -22,13 +28,18 @@ import {
 } from "../services/MindsMeshAPI";
 import { User } from "../types/types";
 import UserCard from "../components/UserCard";
-import EditProfileForm from "../components/EditProfileForm";
-import DeleteAccountModal from "../components/DeleteAccountConfirm";
-import UserDetailCard from "../components/UserDetail";
 import useDebounce from "../hooks/useDebounce";
 import LoadingSpinner from "../helpers/LoadingSpinner";
-import Chat from "../components/Chat";
-import Rooms from "../components/Rooms";
+
+const EditProfileForm = React.lazy(
+  () => import("../components/EditProfileForm")
+);
+const DeleteAccountModal = React.lazy(
+  () => import("../components/DeleteAccountConfirm")
+);
+const UserDetailCard = React.lazy(() => import("../components/UserDetail"));
+const Chat = React.lazy(() => import("../components/Chat"));
+const Rooms = React.lazy(() => import("../components/Rooms"));
 
 const HomePage = () => {
   const [usersWithSkills, setUsersWithSkills] = useState<User[]>([]);
@@ -259,67 +270,72 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen text-white relative">
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <>
-          <img
-            src={HipsterChubbyCat}
-            alt="Hipster Chubby Cat"
-            className="ml-4 absolute top-0 left-0 transform -rotate-180 w-20 h-20 sm:w-32 sm:h-32 lg:w-48 lg:h-48 hover-slide-fade-left"
-          />
-          <img
-            src={HipsterChubbyCat2}
-            alt="Hipster Chubby Cat 2"
-            className="mr-4 absolute bottom-0 right-0 w-28 h-28 sm:w-48 sm:h-48 lg:w-64 lg:h-64 hover-slide-fade-right"
-          />
-          <div className="flex flex-col items-center py-16 sm:py-24 relative z-10 w-full">
-            <h1
-              className="text-lg sm:text-xl lg:text-4xl font-bold mb-6 sm:mb-4 text-right sm:text-center lg:text-center text-white transition-colors duration-500"
-              style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)" }}
-            >
-              Find the right pro, right away
-            </h1>
-            <Input
-              type="text"
-              placeholder="Search for any service..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-11/12 sm:w-1/2 p-4 text-lg rounded-full mb-2 border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-lg placeholder-gray-400"
-            />
-          </div>
-          {debouncedSearchQuery && searchResultPhrase && (
-            <div className="flex justify-center items-center py-4">
-              <p className="text-lg text-white">{searchResultPhrase}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4 sm:p-8">
-            {usersWithSkills
-              .filter((user) => user.role !== "employer")
-              .map((user) => (
-                <UserCard
-                  key={user.id}
-                  user={user}
-                  isOnline={onlineFreelancers.has(user.id)}
-                  unreadCount={unreadCounts[user.id] || 0}
-                  unreadCounts={unreadCounts}
-                  onViewDetails={openViewModal}
-                  onEdit={
-                    userContext?.user?.id === user.id
-                      ? openEditModal
-                      : undefined
-                  }
-                  onDelete={
-                    userContext?.user?.id === user.id
-                      ? openDeleteModal
-                      : undefined
-                  }
-                  onChat={openChatOrRoomsModal}
-                />
-              ))}
-          </div>
-        </>
+      <img
+        src={HipsterChubbyCat}
+        alt="Hipster Chubby Cat"
+        loading="lazy"
+        decoding="async"
+        className="ml-4 absolute top-0 left-0 transform -rotate-180 w-20 h-20 sm:w-32 sm:h-32 lg:w-48 lg:h-48 hover-slide-fade-left"
+      />
+      <img
+        src={HipsterChubbyCat2}
+        alt="Hipster Chubby Cat 2"
+        loading="lazy"
+        decoding="async"
+        className="mr-4 absolute bottom-0 right-0 w-28 h-28 sm:w-48 sm:h-48 lg:w-64 lg:h-64 hover-slide-fade-right"
+      />
+
+      <div className="flex flex-col items-center py-16 sm:py-24 relative z-10 w-full">
+        <h1
+          className="text-lg sm:text-xl lg:text-4xl font-bold mb-6 sm:mb-4 text-right sm:text-center lg:text-center text-white transition-colors duration-500"
+          style={{ textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)" }}
+        >
+          Find the right pro, right away
+        </h1>
+        <Input
+          type="text"
+          placeholder="Search for any service..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className="w-11/12 sm:w-1/2 p-4 text-lg rounded-full mb-2 border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-lg placeholder-gray-400"
+        />
+      </div>
+
+      {debouncedSearchQuery && searchResultPhrase && (
+        <div className="flex justify-center items-center py-4">
+          <p className="text-lg text-white">{searchResultPhrase}</p>
+        </div>
       )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4 sm:p-8">
+        {isLoading ? (
+          <div className="col-span-full flex justify-center py-12">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          usersWithSkills
+            .filter((user) => user.role !== "employer")
+            .map((user) => (
+              <UserCard
+                key={user.id}
+                user={user}
+                isOnline={onlineFreelancers.has(user.id)}
+                unreadCount={unreadCounts[user.id] || 0}
+                unreadCounts={unreadCounts}
+                onViewDetails={openViewModal}
+                onEdit={
+                  userContext?.user?.id === user.id ? openEditModal : undefined
+                }
+                onDelete={
+                  userContext?.user?.id === user.id
+                    ? openDeleteModal
+                    : undefined
+                }
+                onChat={openChatOrRoomsModal}
+              />
+            ))
+        )}
+      </div>
 
       {/* Edit Profile Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -327,53 +343,63 @@ const HomePage = () => {
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
-          {selectedUser && (
-            <EditProfileForm user={selectedUser} setUser={setUser} />
-          )}
+          <Suspense fallback={<LoadingSpinner />}>
+            {selectedUser && (
+              <EditProfileForm user={selectedUser} setUser={setUser} />
+            )}
+          </Suspense>
         </DialogContent>
       </Dialog>
 
       {/* Delete Account Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        {selectedUser && (
-          <DeleteAccountModal
-            userEmail={selectedUser.email}
-            onDeleteConfirm={() => handleDeleteAccount(selectedUser.id)}
-            isOpen={isDeleteModalOpen}
-            onClose={() => setIsDeleteModalOpen(false)}
-          />
-        )}
+        <Suspense fallback={<LoadingSpinner />}>
+          {selectedUser && (
+            <DeleteAccountModal
+              userEmail={selectedUser.email}
+              onDeleteConfirm={() => handleDeleteAccount(selectedUser.id)}
+              isOpen={isDeleteModalOpen}
+              onClose={() => setIsDeleteModalOpen(false)}
+            />
+          )}
+        </Suspense>
       </Dialog>
 
       {/* View Details Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="w-full sm:max-w-[700px] p-4 m-0">
-          {selectedUser && <UserDetailCard user={selectedUser} />}
+          <Suspense fallback={<LoadingSpinner />}>
+            {selectedUser && <UserDetailCard user={selectedUser} />}
+          </Suspense>
         </DialogContent>
       </Dialog>
 
       {/* Chat Modal */}
       <Dialog open={isChatModalOpen} onOpenChange={setIsChatModalOpen}>
         <DialogContent className="w-full sm:max-w-[400px] p-0 m-0">
-          {isChatModalOpen && selectedUser && (
-            <Chat
-              chatPartner={selectedUser}
-              onClose={() => setIsChatModalOpen(false)}
-            />
-          )}
+          <Suspense fallback={<LoadingSpinner />}>
+            {isChatModalOpen && selectedUser && (
+              <Chat
+                chatPartner={selectedUser}
+                onClose={() => setIsChatModalOpen(false)}
+              />
+            )}
+          </Suspense>
         </DialogContent>
       </Dialog>
 
       {/* Rooms Modal (Freelancer's Rooms) */}
       <Dialog open={isRoomsModalOpen} onOpenChange={setIsRoomsModalOpen}>
         <DialogContent className="w-full sm:max-w-[500px] p-4">
-          {userContext.user && (
-            <Rooms
-              isOpen={isRoomsModalOpen}
-              freelancerId={userContext.user.id}
-              onClose={() => setIsRoomsModalOpen(false)}
-            />
-          )}
+          <Suspense fallback={<LoadingSpinner />}>
+            {userContext.user && (
+              <Rooms
+                isOpen={isRoomsModalOpen}
+                freelancerId={userContext.user.id}
+                onClose={() => setIsRoomsModalOpen(false)}
+              />
+            )}
+          </Suspense>
         </DialogContent>
       </Dialog>
     </div>

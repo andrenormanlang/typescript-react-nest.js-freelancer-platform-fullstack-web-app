@@ -1,5 +1,3 @@
-"use server";
-
 import axios, { AxiosError } from "axios";
 import { User, Skill, UserAuth, Room } from "../types/types";
 
@@ -192,7 +190,6 @@ export const updateUser = async (data: {
   return response.data;
 };
 
-
 // Admin Management
 export const manageUserRoles = async (
   userId: string,
@@ -347,7 +344,7 @@ export const sendMessage = async (receiverId: string, formData: FormData) => {
   try {
     const response = await api.post(`/chat/${receiverId}/send`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -423,13 +420,13 @@ export const fetchRoomsForFreelancer = async (
 };
 
 export const uploadFile = async (
-  receiverId: string, 
+  receiverId: string,
   formData: FormData
-): Promise<{ fileUrl: string, fileName: string, fileType: string }> => {
+): Promise<{ fileUrl: string; fileName: string; fileType: string }> => {
   try {
     const response = await api.post(`/chat/${receiverId}/upload`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
