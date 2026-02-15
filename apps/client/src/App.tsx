@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Footer from "./components/Footer";
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import LoadingSpinner from "./helpers/LoadingSpinner";
 import { UserProvider } from "./contexts/UserContext";
 import { GradientProvider } from "./contexts/GradientContext";
@@ -17,6 +17,27 @@ const EmailVerificationPage = React.lazy(
 const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 
 function App() {
+  const [isReady, setIsReady] = useState(false);
+
+  const AppRoutes = () => {
+    React.useEffect(() => {
+      setIsReady(true);
+    }, []);
+    return (
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/verify-email"
+          element={<EmailVerificationPage />}
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPasswordPage />}
+        />
+      </Routes>
+    );
+  };
+
   return (
     <>
       <Toaster />
@@ -26,20 +47,10 @@ function App() {
             <GradientProvider>
               <SocketProvider>
                 <Navbar />
-                <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route
-                      path="/verify-email"
-                      element={<EmailVerificationPage />}
-                    />
-                    <Route
-                      path="/reset-password"
-                      element={<ResetPasswordPage />}
-                    />
-                  </Routes>
+                <Suspense fallback={<LoadingSpinner fullScreen overlay />}>
+                  <AppRoutes />
                 </Suspense>
-                <Footer />
+                {isReady && <Footer />}
               </SocketProvider>
             </GradientProvider>
           </UserProvider>
