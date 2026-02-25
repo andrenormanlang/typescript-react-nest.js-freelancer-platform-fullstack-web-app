@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import * as bodyParser from 'body-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { buildApiLandingHtml } from './common/api-landing';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -46,6 +47,21 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   const PORT = process.env.PORT || 3000;
+
+  const landingHtml = buildApiLandingHtml(document, {
+    title: 'MindsMesh API',
+    subtitle: 'Interactive API map',
+  });
+
+  const httpAdapter = app.getHttpAdapter().getInstance();
+  httpAdapter.get('/', (_req: any, res: any) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(landingHtml);
+  });
+  httpAdapter.get('/api', (_req: any, res: any) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(landingHtml);
+  });
 
   // Start listening on the specified PORT and bind to all network interfaces
   await app.listen(PORT, '0.0.0.0');
