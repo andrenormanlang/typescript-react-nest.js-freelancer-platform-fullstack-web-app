@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { SendGridService } from '../sendgrid/sendgrid.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -17,14 +17,16 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly sendGridService: SendGridService
+    private readonly mailService: MailService
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password))) {
       if (!user.isEmailVerified) {
-        throw new UnauthorizedException('Please verify your email before logging in.');
+        throw new UnauthorizedException(
+          'Please verify your email before logging in.'
+        );
       }
       // User verified, continue login
       return user;
@@ -35,23 +37,28 @@ export class AuthService {
 
   async login(user: any) {
     const foundUser = await this.usersService.findByEmail(user.email);
-  
+
     if (!foundUser) {
       throw new UnauthorizedException('Invalid credentials');
     }
-  
-    const passwordMatches = await bcrypt.compare(user.password, foundUser.password);
+
+    const passwordMatches = await bcrypt.compare(
+      user.password,
+      foundUser.password
+    );
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
     }
-  
+
     if (!foundUser.isEmailVerified) {
-      throw new UnauthorizedException('Email not verified. Please check your email to verify your account.');
+      throw new UnauthorizedException(
+        'Email not verified. Please check your email to verify your account.'
+      );
     }
-  
+
     // Set user as online
     await this.usersService.update(foundUser.id, { isOnline: true });
-  
+
     const payload = {
       email: foundUser.email,
       sub: foundUser.id,
@@ -62,7 +69,7 @@ export class AuthService {
       userId: foundUser.id,
     };
   }
-  
+
   async logout(userId: string): Promise<void> {
     const user = await this.usersService.findOne(userId);
     if (!user) {
@@ -71,8 +78,7 @@ export class AuthService {
     user.isOnline = false;
     await this.usersService.update(userId, { isOnline: false });
   }
-  
-  
+
   async register(user: any) {
     const hashedPassword = await bcrypt.hash(user.password, 10);
     await this.usersService.create({
@@ -98,7 +104,7 @@ export class AuthService {
 
     const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
 
-    await this.sendGridService.sendPasswordResetEmail(user.email, resetLink);
+    await this.mailService.sendPasswordResetEmail(user.email, resetLink);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
@@ -106,29 +112,31 @@ export class AuthService {
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get<string>('RESET_PASSWORD_SECRET'),
       });
-  
+
       const user = await this.usersService.findByEmail(payload.email);
-  
+
       if (!user) {
         throw new NotFoundException('User not found');
       }
 
-      
-  
-      await this.usersService.update(user.id, { password: newPassword }); 
-  
+      await this.usersService.update(user.id, { password: newPassword });
+
       const updatedUser = await this.usersService.findByEmail(payload.email);
-  
-      const passwordMatches = await bcrypt.compare(newPassword, updatedUser.password);
+
+      const passwordMatches = await bcrypt.compare(
+        newPassword,
+        updatedUser.password
+      );
       if (!passwordMatches) {
-        throw new InternalServerErrorException('Password update verification failed');
+        throw new InternalServerErrorException(
+          'Password update verification failed'
+        );
       }
-  
     } catch (error) {
       console.error('Error during password reset:', error.message);
       throw new BadRequestException('Invalid or expired token');
     }
-  }  
+  }
 
   async generateTokens(userId: string, email: string) {
     const [accessToken, refreshToken] = await Promise.all([
@@ -137,14 +145,14 @@ export class AuthService {
         {
           secret: this.configService.get<string>('JWT_SECRET'),
           expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
-        },
+        }
       ),
       this.jwtService.signAsync(
         { sub: userId, email },
         {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
           expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
-        },
+        }
       ),
     ]);
 
@@ -161,7 +169,7 @@ export class AuthService {
       await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
-      
+
       return this.generateTokens(userId, refreshToken);
     } catch {
       throw new UnauthorizedException('Invalid refresh token');

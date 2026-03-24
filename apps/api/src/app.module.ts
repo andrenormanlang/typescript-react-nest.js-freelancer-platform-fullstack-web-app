@@ -10,7 +10,7 @@ import { SkillsModule } from './skills/skills.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { SendGridModule } from './sendgrid/sendgrid.module';
+import { MailModule } from './mail/mail.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { RoomsModule } from './chat/rooms.module';
@@ -36,15 +36,17 @@ import firebaseConfig from './config/firebase.config';
     }),
 
     // ThrottlerModule global configuration
-    ThrottlerModule.forRoot([{
-      ttl: 60 * 1000, // Time window in milliseconds (60 seconds)
-      limit: 10,      // Max number of requests within the time window
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60 * 1000, // Time window in milliseconds (60 seconds)
+        limit: 10, // Max number of requests within the time window
+      },
+    ]),
 
     AuthModule,
     UsersModule,
     SkillsModule,
-    SendGridModule,
+    MailModule,
     ChatModule,
     RoomsModule,
     FirebaseModule,

@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { SendGridService } from '@/sendgrid/sendgrid.service';
+import { MailService } from '@/mail/mail.service';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -28,8 +28,8 @@ export class UsersService {
     private readonly skillsRepository: Repository<Skill>,
 
     private readonly configService: ConfigService,
-    private readonly sendGridService: SendGridService,
-    private readonly cloudinaryService: CloudinaryService, 
+    private readonly mailService: MailService,
+    private readonly cloudinaryService: CloudinaryService
   ) {}
 
   async findByEmail(email: string): Promise<User | undefined> {
@@ -81,7 +81,7 @@ export class UsersService {
 
     // Send verification email
     const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?userId=${newUser.id}`;
-    await this.sendGridService.sendVerificationEmail(
+    await this.mailService.sendVerificationEmail(
       newUser.email,
       verificationLink
     );
@@ -118,10 +118,7 @@ export class UsersService {
     }
 
     const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?userId=${user.id}`;
-    await this.sendGridService.sendVerificationEmail(
-      user.email,
-      verificationLink
-    );
+    await this.mailService.sendVerificationEmail(user.email, verificationLink);
   }
 
   async createBulk(usersData: CreateUserDto[]): Promise<User[]> {
@@ -172,7 +169,11 @@ export class UsersService {
     return users;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, skillImageUrls?: Express.Multer.File[]): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    skillImageUrls?: Express.Multer.File[]
+  ): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['skills'],
@@ -212,19 +213,27 @@ export class UsersService {
     // Handle new skill images
     if (skillImageUrls && skillImageUrls.length > 0) {
       const uploadedUrls = await Promise.all(
-        skillImageUrls.map(file => this.cloudinaryService.uploadFile(file))
+        skillImageUrls.map((file) => this.cloudinaryService.uploadFile(file))
       );
 
       // Filter out any failed uploads
-      const successfulUploads = uploadedUrls.filter((result): result is UploadApiResponse => (result as UploadApiResponse).secure_url !== undefined);
+      const successfulUploads = uploadedUrls.filter(
+        (result): result is UploadApiResponse =>
+          (result as UploadApiResponse).secure_url !== undefined
+      );
 
-      const newSkillImageUrls = successfulUploads.map(result => result.secure_url);
-      user.skillImageUrls = [...(user.skillImageUrls || []), ...newSkillImageUrls];
+      const newSkillImageUrls = successfulUploads.map(
+        (result) => result.secure_url
+      );
+      user.skillImageUrls = [
+        ...(user.skillImageUrls || []),
+        ...newSkillImageUrls,
+      ];
     }
 
     // Add new skills if provided
     if (updateUserDto.skills && updateUserDto.skills.length > 0) {
-      const skills = updateUserDto.skills.map(skillDto => {
+      const skills = updateUserDto.skills.map((skillDto) => {
         return this.skillsRepository.create({
           ...skillDto,
           user: user,

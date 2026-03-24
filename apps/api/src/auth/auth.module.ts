@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt.auth.guard';
-import { SendGridModule } from '../sendgrid/sendgrid.module';
+import { MailModule } from '../mail/mail.module';
 import { RefreshTokenStrategy } from './refresh-token.strategy';
 
 @Module({
@@ -22,15 +22,10 @@ import { RefreshTokenStrategy } from './refresh-token.strategy';
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') },
       }),
     }),
-    SendGridModule
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService, 
-    JwtStrategy, 
-    JwtAuthGuard,
-    RefreshTokenStrategy
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RefreshTokenStrategy],
   exports: [AuthService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

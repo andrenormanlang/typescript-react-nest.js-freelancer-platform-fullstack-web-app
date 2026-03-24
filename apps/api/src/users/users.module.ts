@@ -6,14 +6,14 @@ import { User } from './entities/user.entity';
 import { Skill } from '../skills/entities/skill.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
-import { SendGridModule } from '@/sendgrid/sendgrid.module';
+import { MailModule } from '@/mail/mail.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Skill]),
     CloudinaryModule,
     ConfigModule,
-    SendGridModule, // Add SendGridModule
+    MailModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],
